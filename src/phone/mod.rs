@@ -1,5 +1,5 @@
-use constants::*;
 use std::fmt;
+use constants::*;
 
 pub mod read;
 pub use self::read::read_phones as read_all;
