@@ -157,6 +157,7 @@ pub fn read_phone(lines: &mut &[String]) -> Phone {
     let mut in_prob = Vec::new();
     let mut trans_prob = Vec::new();
     let mut out_prob = Vec::new();
+    let mut skip_prob = 0f64;
     match read_one_input(lines) {
         TransProb(_tp) => {
             in_prob = _tp[0][1..=n_state].to_vec();
@@ -168,6 +169,8 @@ pub fn read_phone(lines: &mut &[String]) -> Phone {
             for i in 1..=n_state {
                 out_prob.push(_tp[i][n_state + 1]);
             }
+
+            skip_prob = _tp[0][n_state + 1];
         },
         _ => ()
     }
@@ -177,7 +180,7 @@ pub fn read_phone(lines: &mut &[String]) -> Phone {
     Phone {
         name,
         states,
-        in_prob, trans_prob, out_prob
+        in_prob, trans_prob, out_prob, skip_prob
     }
 }
 

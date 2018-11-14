@@ -11,6 +11,7 @@ pub struct Phone {
     pub in_prob: Vec<f64>,
     pub trans_prob: Vec<Vec<f64>>,
     pub out_prob: Vec<f64>,
+    pub skip_prob: f64, // transition prob between entry and exit
 }
 
 #[derive(Debug)]
