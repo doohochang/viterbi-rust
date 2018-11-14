@@ -1,25 +1,19 @@
 use constants::*;
 use word::Word;
 use phone::{self, Phone};
-
-#[derive(Debug)]
-pub struct Dest {
-    word: usize,
-    phone: usize,
-    state: usize,
-    is_next_word: bool,
-}
+use viterbi::StateRef;
 
 #[derive(Debug)]
 pub struct Transition {
-    dest: Dest,
-    log_prob: f64,
+    pub log_prob: f64,
+    pub dest: StateRef,
+    pub to_next_word: bool,
 }
 
 #[derive(Debug)]
 pub struct Transitions {
-    from_start: Vec<Transition>,
-    from_state: Vec<Vec<Vec<Vec<Transition>>>>, // from_state[word][phone][state] has own transitions
+    pub from_start: Vec<Transition>,
+    pub from_state: Vec<Vec<Vec<Vec<Transition>>>>, // from_state[word][phone][state] has own transitions
 }
 
 pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
@@ -32,13 +26,13 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
             if prob > 0f64 {
                 from_start.push(
                     Transition {
-                        dest: Dest {
+                        log_prob: prob.ln() - WORD_PENALTY,
+                        dest: StateRef {
                             word: w,
                             phone: 0,
                             state: s,
-                            is_next_word: true
                         },
-                        log_prob: prob.ln() - WORD_PENALTY
+                        to_next_word: true
                     }
                 )
             }
@@ -71,13 +65,13 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
                     if prob > 0f64 {
                         from_state[w][p][s].push(
                             Transition {
-                                dest: Dest {
+                                log_prob: prob.ln(),
+                                dest: StateRef {
                                     word: w,
                                     phone: p,
                                     state: d,
-                                    is_next_word: false
                                 },
-                                log_prob: prob.ln()
+                                to_next_word: false
                             }
                         )
                     }
@@ -93,13 +87,13 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
                         if prob > 0f64 {
                             from_state[w][p][s].push(
                                 Transition {
-                                    dest: Dest { 
+                                    log_prob: prob.ln(),
+                                    dest: StateRef { 
                                         word: w,
                                         phone: p + 1,
                                         state: d,
-                                        is_next_word: false
                                     },
-                                    log_prob: prob.ln()
+                                    to_next_word: false,
                                 }
                             )
                         }
@@ -124,13 +118,13 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
                     if prob > 0f64 {
                         from_state[w][p][s].push(
                             Transition {
-                                dest: Dest {
+                                log_prob: prob.ln() - WORD_PENALTY,
+                                dest: StateRef {
                                     word: next_w,
                                     phone: 0,
                                     state: d,
-                                    is_next_word: true
                                 },
-                                log_prob: prob.ln() - WORD_PENALTY
+                                to_next_word: true,
                             }
                         )
                     }
@@ -144,13 +138,13 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
                         if prob > 0f64 {
                             from_state[w][p - 1][s].push(
                                 Transition {
-                                    dest: Dest {
+                                    log_prob: prob.ln() - WORD_PENALTY,
+                                    dest: StateRef {
                                         word: next_w,
                                         phone: 0,
                                         state: d,
-                                        is_next_word: true
                                     },
-                                    log_prob: prob.ln() - WORD_PENALTY
+                                    to_next_word: true,
                                 }
                             )
                         }

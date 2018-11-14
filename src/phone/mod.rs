@@ -40,3 +40,12 @@ pub fn find<'a>(name: &str, phones: &'a [Phone]) -> &'a Phone {
         None => panic!("No phone name: {}", name)
     }
 }
+
+pub fn find_index(name: &str, phones: &[Phone]) -> usize {
+    for p in 0..phones.len() {
+        if phones[p].name == name {
+            return p;
+        }
+    }
+    panic!("No phone name: {}", name)
+}
