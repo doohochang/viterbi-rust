@@ -31,8 +31,12 @@ impl fmt::Debug for Pdf {
     }
 }
 
-impl Phone {
-    fn n_state(&self) -> usize  {
-        self.states.len()
+pub fn find<'a>(name: &str, phones: &'a [Phone]) -> &'a Phone {
+    let find_result = phones.iter()
+        .find(|phone| phone.name == name);
+
+    match find_result {
+        Some(phone) => phone,
+        None => panic!("No phone name: {}", name)
     }
 }
