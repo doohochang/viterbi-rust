@@ -26,13 +26,13 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
             if prob > 0f64 {
                 from_start.push(
                     Transition {
-                        log_prob: prob.ln() - WORD_PENALTY,
+                        log_prob: prob.ln(),
                         dest: StateRef {
                             word: w,
                             phone: 0,
                             state: s,
                         },
-                        to_next_word: true
+                        to_next_word: false
                     }
                 )
             }

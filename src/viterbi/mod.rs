@@ -39,15 +39,14 @@ pub fn run<'w>(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &'w 
 
     for t in transitions.from_start.iter() {
         let dest_value = &mut table[0][t.dest.word][t.dest.phone][t.dest.state];
-        let log_prob = t.log_prob;
         consider_and_apply(
-            Value { log_prob, prev: None, word_changed: true },
+            Value { log_prob: t.log_prob, prev: None, word_changed: false },
             dest_value
         )
     }
 
     for t in 0..spectrogram.len() - 1 {
-        let observation_prob = compute_observation_prob(&spectrogram[t], phones);
+        let observation_prob = compute_observation_prob(&spectrogram[t + 1], phones);
         for w in 0..words.len() {
             let word = &words[w];
             for p in 0..word.phones.len() {
@@ -92,11 +91,11 @@ fn backtrace(time: usize, word: usize, phone: usize, state: usize, table: &Vec<V
         Some(StateRef { word: prev_word, phone: prev_phone, state: prev_state }) => {
             let mut seq = backtrace(time - 1, prev_word, prev_phone, prev_state, table);
             if value.word_changed {
-                seq.push(word);
+                seq.push(prev_word);
             }
             seq
         },
-        None => vec![word]
+        None => Vec::new()
     }
 }
 
