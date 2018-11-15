@@ -1,3 +1,5 @@
+use std::ffi::OsStr;
+
 use fileutil;
 use word::*;
 
@@ -10,7 +12,7 @@ pub fn read_words(dictionary_path: &str, unigram_path: &str, bigram_path: &str) 
 }
 
 fn read_dictionary(path: &str) -> Vec<Word> {
-    let lines = fileutil::read_lines(path);
+    let lines = fileutil::read_lines(OsStr::new(path));
 
     let mut words = Vec::new();
     for line in lines.iter() {
@@ -40,7 +42,7 @@ fn read_dictionary(path: &str) -> Vec<Word> {
 }
 
 fn read_head_probs(unigram_path: &str, words: &mut Vec<Word>) {
-    let lines = fileutil::read_lines(unigram_path);
+    let lines = fileutil::read_lines(OsStr::new(unigram_path));
 
     for line in lines.iter() {
         let mut elements = line.split_whitespace();
@@ -60,7 +62,7 @@ fn read_head_probs(unigram_path: &str, words: &mut Vec<Word>) {
 }
 
 fn read_next_word_probs(bigram_path: &str, words: &mut Vec<Word>) {
-    let lines = fileutil::read_lines(bigram_path);
+    let lines = fileutil::read_lines(OsStr::new(bigram_path));
 
     for line in lines.iter() {
         let mut elements = line.split_whitespace();

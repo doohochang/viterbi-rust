@@ -185,7 +185,8 @@ pub fn read_phone(lines: &mut &[String]) -> Phone {
 }
 
 pub fn read_phones(hmm_file_path: &str) -> Vec<Phone> {
-    let all_lines = fileutil::read_lines(hmm_file_path);
+    use std::ffi::OsStr;
+    let all_lines = fileutil::read_lines(OsStr::new(hmm_file_path));
 
     let mut phones: Vec<Phone> = Vec::new();
 

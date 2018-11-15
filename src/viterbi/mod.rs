@@ -37,18 +37,16 @@ pub fn run<'w>(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &'w 
     let mut table = init_table(spectrogram.len(), phones, words);
     let phone_index = compute_phone_index(phones, words);
 
-    let observation_prob = compute_observation_prob(&spectrogram[0], phones);
     for t in transitions.from_start.iter() {
         let dest_value = &mut table[0][t.dest.word][t.dest.phone][t.dest.state];
-        let p_index = phone_index[t.dest.word][t.dest.phone];
-        let log_prob = t.log_prob + observation_prob[p_index][t.dest.state];
+        let log_prob = t.log_prob;
         consider_and_apply(
             Value { log_prob, prev: None, word_changed: true },
             dest_value
         )
     }
 
-    for t in 0..spectrogram.len() {
+    for t in 0..spectrogram.len() - 1 {
         let observation_prob = compute_observation_prob(&spectrogram[t], phones);
         for w in 0..words.len() {
             let word = &words[w];
