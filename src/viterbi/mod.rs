@@ -33,7 +33,7 @@ fn consider_and_apply(new_value: Value, old_value: &mut Option<Value>) {
     }
 }
 
-pub fn run(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &[Word], transitions: &Transitions) {
+pub fn run<'w>(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &'w [Word], transitions: &Transitions) -> Vec<&'w Word> {
     let mut table = init_table(spectrogram.len(), phones, words);
     let phone_index = compute_phone_index(phones, words);
 
@@ -79,6 +79,27 @@ pub fn run(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &[Word],
         }
     }
     let max_ref = get_max(&table[spectrogram.len() - 1]);
+    let word_index_seq = backtrace(spectrogram.len() - 1, max_ref.word, max_ref.phone, max_ref.state, &table);
+
+    word_index_seq.into_iter()
+        .map(|index| &words[index])
+        .collect()
+}
+
+// backtrace and return word index sequence
+fn backtrace(time: usize, word: usize, phone: usize, state: usize, table: &Vec<Vec<Vec<Vec<Option<Value>>>>>) -> Vec<usize> {
+    let value = &table[time][word][phone][state].expect("No Table Value");
+
+    match value.prev {
+        Some(StateRef { word: prev_word, phone: prev_phone, state: prev_state }) => {
+            let mut seq = backtrace(time - 1, prev_word, prev_phone, prev_state, table);
+            if value.word_changed {
+                seq.push(word);
+            }
+            seq
+        },
+        None => vec![word]
+    }
 }
 
 fn get_max(last_values: &Vec<Vec<Vec<Option<Value>>>>) -> StateRef {
