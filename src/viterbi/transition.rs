@@ -18,8 +18,7 @@ pub struct Transitions {
 
 pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
     let mut from_start: Vec<Transition> = Vec::new();
-    for w in 0..words.len() {
-        let word = &words[w];
+    for (w, word) in words.iter().enumerate() {
         let phone = phone::find(&word.phones[0], phones);
         for s in 0..phone.states.len() {
             let prob = word.head_prob * phone.in_prob[s];
@@ -41,8 +40,7 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
 
     // initialize from_state
     let mut from_state: Vec<Vec<Vec<Vec<Transition>>>> = Vec::new();
-    for w in 0..words.len() {
-        let word = &words[w];
+    for (w, word) in words.iter().enumerate() {
         from_state.push(Vec::with_capacity(word.phones.len()));
         for p in 0..word.phones.len() {
             let phone = phone::find(&word.phones[p], phones);
@@ -53,8 +51,7 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
         }
     }
 
-    for w in 0..words.len() {
-        let word = &words[w];
+    for (w, word) in words.iter().enumerate() {
         for p in 0..word.phones.len() {
             let phone = phone::find(&word.phones[p], phones);
 
@@ -104,13 +101,11 @@ pub fn wire(phones: &[Phone], words: &[Word]) -> Transitions {
     }
 
     // transitions to next word
-    for w in 0..words.len() {
-        let word = &words[w];
+    for (w, word) in words.iter().enumerate() {
         let p = word.phones.len() - 1;
         let phone = phone::find(&word.phones[p], phones);
         let is_phone_sp = phone.name == "sp";
-        for next_w in 0..words.len() {
-            let next_word = &words[next_w];
+        for (next_w, next_word) in words.iter().enumerate() {
             let next_phone = phone::find(&next_word.phones[0], phones);
             for d in 0..next_phone.states.len() {
                 for s in 0..phone.states.len() {
