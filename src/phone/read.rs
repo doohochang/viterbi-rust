@@ -134,7 +134,7 @@ pub fn read_state(lines: &mut &[String]) -> State {
     State { pdfs }
 }
 
-pub fn read_phone(lines: &mut &[String]) -> Phone {
+pub fn read_phone(lines: &mut &[String], index: usize) -> Phone {
     let mut name: String = String::new();
     let mut n_state: usize = 0;
 
@@ -178,6 +178,7 @@ pub fn read_phone(lines: &mut &[String]) -> Phone {
     read_one_input(lines); // read <ENDHMM>
 
     Phone {
+        index,
         name,
         states,
         in_prob, trans_prob, out_prob, skip_prob
@@ -192,8 +193,10 @@ pub fn read_phones(hmm_file_path: &str) -> Vec<Phone> {
 
     let mut remaining_lines = &all_lines[..];
 
+    let mut index = 0;
     while remaining_lines.len() > 0 {
-        phones.push(read_phone(&mut remaining_lines));
+        phones.push(read_phone(&mut remaining_lines, index));
+        index = index + 1;
     }
 
     phones

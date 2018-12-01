@@ -2,16 +2,22 @@ use std::ffi::OsStr;
 
 use fileutil;
 use word::*;
+use phone::{self, Phone};
 
-pub fn read_words(dictionary_path: &str, unigram_path: &str, bigram_path: &str) -> Vec<Word> {
-    let mut words = read_dictionary(dictionary_path);
+pub fn read_words<'p>(
+    dictionary_path: &str,
+    unigram_path: &str,
+    bigram_path: &str,
+    phones: &'p [Phone],
+) -> Vec<Word<'p>> {
+    let mut words = read_dictionary(dictionary_path, phones);
     read_head_probs(unigram_path, &mut words);
     read_next_word_probs(bigram_path, &mut words);
 
     words
 }
 
-fn read_dictionary(path: &str) -> Vec<Word> {
+fn read_dictionary<'p>(path: &str, phones: &'p [Phone]) -> Vec<Word<'p>> {
     let lines = fileutil::read_lines(OsStr::new(path));
 
     let mut words = Vec::new();
@@ -23,8 +29,8 @@ fn read_dictionary(path: &str) -> Vec<Word> {
         }
 
         let name = elements[0].to_string();
-        let phones: Vec<String> = (&elements[1..]).iter()
-            .map(|s| s.to_string())
+        let phones: Vec<_> = elements[1..].iter()
+            .map(|name| phone::find(name, phones))
             .collect();
 
         words.push(
