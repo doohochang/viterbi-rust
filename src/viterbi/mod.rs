@@ -45,10 +45,9 @@ pub fn run<'w>(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &'w 
         )
     }
 
-    for t in 0..spectrogram.len() - 1 {
-        let observation_prob = compute_observation_prob(&spectrogram[t + 1], phones);
-        for w in 0..words.len() {
-            let word = &words[w];
+    for (t, spectrum) in spectrogram[1..].iter().enumerate() {
+        let observation_prob = compute_observation_prob(spectrum, phones);
+        for (w, word) in words.iter().enumerate() {
             for p in 0..word.phones.len() {
                 let p_index = phone_index[w][p];
                 let n_state = phones[p_index].states.len();
@@ -127,8 +126,7 @@ fn get_max(last_values: &Vec<Vec<Vec<Option<Value>>>>) -> StateRef {
 // pre-compute observation probabilities
 fn compute_observation_prob(spectrum: &[f64; N_DIMENSION], phones: &[Phone]) -> Vec<Vec<f64>> {
     let mut prob = vec![Vec::new(); phones.len()];
-    for p in 0..phones.len() {
-        let _phone = &phones[p];
+    for (p, _phone) in phones.iter().enumerate() {
         for state in _phone.states.iter() {
             prob[p].push(observation::prob(spectrum, state));
         }
@@ -138,8 +136,7 @@ fn compute_observation_prob(spectrum: &[f64; N_DIMENSION], phones: &[Phone]) -> 
 
 fn compute_phone_index(phones: &[Phone], words: &[Word]) -> Vec<Vec<usize>> {
     let mut phone_index = Vec::with_capacity(words.len());
-    for w in 0..words.len() {
-        let word = &words[w];
+    for (w, word) in words.iter().enumerate() {
         phone_index.push(Vec::with_capacity(word.phones.len()));
         for phone_name in word.phones.iter() {
             phone_index[w].push(phone::find_index(phone_name, phones));
@@ -153,10 +150,10 @@ fn init_table(time_length: usize, phones: &[Phone], words: &[Word]) -> Vec<Vec<V
     let mut table = Vec::with_capacity(time_length);
     for t in 0..time_length {
         table.push(Vec::with_capacity(words.len()));
-        for w in 0..words.len() {
-            table[t].push(Vec::with_capacity(words[w].phones.len()));
-            for p in 0..words[w].phones.len() {
-                let _phone = phone::find(&words[w].phones[p], phones);
+        for (w, word) in words.iter().enumerate() {
+            table[t].push(Vec::with_capacity(word.phones.len()));
+            for p in 0..word.phones.len() {
+                let _phone = phone::find(&word.phones[p], phones);
                 table[t][w].push(Vec::with_capacity(_phone.states.len()));
                 for _ in 0.._phone.states.len() {
                     table[t][w][p].push(None);
