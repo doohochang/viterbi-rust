@@ -2,7 +2,7 @@ mod observation;
 mod transition;
 
 use constants::*;
-use phone::{self, Phone};
+use phone::Phone;
 use word::Word;
 pub use self::transition::{Transitions, wire as wire_transitions};
 
@@ -33,9 +33,8 @@ fn consider_and_apply(new_value: Value, old_value: &mut Option<Value>) {
     }
 }
 
-pub fn run<'w>(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &'w [Word], transitions: &Transitions) -> Vec<&'w Word> {
-    let mut table = init_table(spectrogram.len(), phones, words);
-    let phone_index = compute_phone_index(phones, words);
+pub fn run<'w>(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &'w [Word<'w>], transitions: &Transitions) -> Vec<&'w Word<'w>> {
+    let mut table = init_table(spectrogram.len(), words);
 
     for t in transitions.from_start.iter() {
         let dest_value = &mut table[0][t.dest.word][t.dest.phone][t.dest.state];
@@ -48,15 +47,13 @@ pub fn run<'w>(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &'w 
     for (t, spectrum) in spectrogram[1..].iter().enumerate() {
         let observation_prob = compute_observation_prob(spectrum, phones);
         for (w, word) in words.iter().enumerate() {
-            for p in 0..word.phones.len() {
-                let p_index = phone_index[w][p];
-                let n_state = phones[p_index].states.len();
-                for s in 0..n_state {
+            for (p, phone) in word.phones.iter().enumerate() {
+                for s in 0..phone.states.len() {
                     let table_value = table[t][w][p][s];
                     match table_value {
                         Some(prev_value) => {
                             for tr in transitions.from_state[w][p][s].iter() {
-                                let next_p_index = phone_index[tr.dest.word][tr.dest.phone];
+                                let next_p_index = words[tr.dest.word].phones[tr.dest.phone].index;
                                 let log_prob = prev_value.log_prob + tr.log_prob + observation_prob[next_p_index][tr.dest.state];
                                 consider_and_apply(
                                     Value { 
@@ -126,36 +123,24 @@ fn get_max(last_values: &Vec<Vec<Vec<Option<Value>>>>) -> StateRef {
 // pre-compute observation probabilities
 fn compute_observation_prob(spectrum: &[f64; N_DIMENSION], phones: &[Phone]) -> Vec<Vec<f64>> {
     let mut prob = vec![Vec::new(); phones.len()];
-    for (p, _phone) in phones.iter().enumerate() {
-        for state in _phone.states.iter() {
+    for (p, phone) in phones.iter().enumerate() {
+        for state in phone.states.iter() {
             prob[p].push(observation::prob(spectrum, state));
         }
     }
     prob
 }
 
-fn compute_phone_index(phones: &[Phone], words: &[Word]) -> Vec<Vec<usize>> {
-    let mut phone_index = Vec::with_capacity(words.len());
-    for (w, word) in words.iter().enumerate() {
-        phone_index.push(Vec::with_capacity(word.phones.len()));
-        for phone_name in word.phones.iter() {
-            phone_index[w].push(phone::find_index(phone_name, phones));
-        }
-    }
-    phone_index
-}
-
 // reset and resize multi-demensional vec values
-fn init_table(time_length: usize, phones: &[Phone], words: &[Word]) -> Vec<Vec<Vec<Vec<Option<Value>>>>> {
+fn init_table(time_length: usize, words: &[Word]) -> Vec<Vec<Vec<Vec<Option<Value>>>>> {
     let mut table = Vec::with_capacity(time_length);
     for t in 0..time_length {
         table.push(Vec::with_capacity(words.len()));
         for (w, word) in words.iter().enumerate() {
             table[t].push(Vec::with_capacity(word.phones.len()));
-            for p in 0..word.phones.len() {
-                let _phone = phone::find(&word.phones[p], phones);
-                table[t][w].push(Vec::with_capacity(_phone.states.len()));
-                for _ in 0.._phone.states.len() {
+            for (p, phone) in word.phones.iter().enumerate() {
+                table[t][w].push(Vec::with_capacity(phone.states.len()));
+                for _ in 0..phone.states.len() {
                     table[t][w][p].push(None);
                 }
             }

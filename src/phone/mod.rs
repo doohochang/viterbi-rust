@@ -6,6 +6,7 @@ pub use self::read::read_phones as read_all;
 
 #[derive(Debug)]
 pub struct Phone {
+    pub index: usize,
     pub name: String,
     pub states: Vec<State>,
     pub in_prob: Vec<f64>,
@@ -39,13 +40,4 @@ pub fn find<'a>(name: &str, phones: &'a [Phone]) -> &'a Phone {
         Some(phone) => phone,
         None => panic!("No phone name: {}", name)
     }
-}
-
-pub fn find_index(name: &str, phones: &[Phone]) -> usize {
-    for p in 0..phones.len() {
-        if phones[p].name == name {
-            return p;
-        }
-    }
-    panic!("No phone name: {}", name)
 }
