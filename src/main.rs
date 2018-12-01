@@ -5,6 +5,7 @@ mod word;
 mod viterbi;
 
 use std::ffi::OsStr;
+use constants::PRINT_PERCENT_COUNT;
 
 fn get_rec_name(test_file_path: &OsStr) -> String {
     let test_file_path = test_file_path.to_str().expect("Can't parse test file path");
@@ -25,16 +26,16 @@ fn run_all_tests() {
 
     let _ = recognized_file.write("#!MLF!#\n".as_bytes());
 
-    let mut count = 0;
-    for test_file_path in test_file_paths.iter() {
-        count += 1;
-        if count % 60 == 0 {
+    for (count, test_file_path) in test_file_paths.iter().enumerate() {
+        if count % PRINT_PERCENT_COUNT == 0 {
             println!("{:.2}%..", count as f64 / test_file_paths.len() as f64 * 100f64);
         }
+
         let spectrogram = fileutil::read_spectrogram(test_file_path);
         let rec_name = get_rec_name(test_file_path);
         let _ = recognized_file.write_fmt(format_args!("{}\n", &rec_name));
         let word_seq = viterbi::run(&spectrogram, &phones, &words, &transitions);
+
         for word in word_seq.into_iter() {
             if word.name == "<s>" {
                 continue;
