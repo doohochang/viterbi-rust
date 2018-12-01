@@ -19,8 +19,13 @@ fn run_all_tests() {
     let mut recognized_file = fileutil::create_file("recognized.txt");
 
     let phones = phone::read_all("hmm.txt");
-    let words = word::read_all("dictionary.txt", "unigram.txt", "bigram.txt");
-    let transitions = viterbi::wire_transitions(&phones, &words);
+    let words = word::read_all(
+        "dictionary.txt",
+        "unigram.txt",
+        "bigram.txt",
+        &phones,
+    );
+    let transitions = viterbi::wire_transitions(&words);
 
     use std::io::Write;
 
