@@ -20,8 +20,8 @@ pub fn read_spectrogram(file_path: &OsStr) -> Vec<[f64; N_DIMENSION]> {
     let lines = read_lines(file_path);
     let mut spectrogram = Vec::new();
 
-    for l in 1..lines.len() {
-        let values: Vec<&str> = lines[l].split_whitespace().collect();
+    for line in lines[1..].iter() {
+        let values: Vec<&str> = line.split_whitespace().collect();
 
         if values.len() == N_DIMENSION {
             let mut spectrum = [0f64; N_DIMENSION];
