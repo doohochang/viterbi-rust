@@ -19,7 +19,7 @@ pub fn wire(words: &[Word]) -> Transitions {
     let mut from_start: Vec<Transition> = Vec::new();
     for (w, word) in words.iter().enumerate() {
         let phone = word.phones[0];
-        for s in 0..phone.states.len() {
+        for s in 0..phone.n_states {
             let prob = word.head_prob * phone.in_prob[s];
             if prob > 0f64 {
                 from_start.push(
@@ -42,8 +42,8 @@ pub fn wire(words: &[Word]) -> Transitions {
     for (w, word) in words.iter().enumerate() {
         from_state.push(Vec::with_capacity(word.phones.len()));
         for (p, phone) in word.phones.iter().enumerate() {
-            from_state[w].push(Vec::with_capacity(phone.states.len()));
-            for _ in 0..phone.states.len() {
+            from_state[w].push(Vec::with_capacity(phone.n_states));
+            for _ in 0..phone.n_states {
                 from_state[w][p].push(Vec::new());
             }
         }
@@ -52,8 +52,8 @@ pub fn wire(words: &[Word]) -> Transitions {
     for (w, word) in words.iter().enumerate() {
         for (p, phone) in word.phones.iter().enumerate() {
             // transitions in each phone's hmm
-            for s in 0..phone.states.len() {
-                for d in 0..phone.states.len() {
+            for s in 0..phone.n_states {
+                for d in 0..phone.n_states {
                     let prob = phone.trans_prob[s][d];
                     if prob > 0f64 {
                         from_state[w][p][s].push(
@@ -74,8 +74,8 @@ pub fn wire(words: &[Word]) -> Transitions {
             if p < word.phones.len() - 1 {
                 // transitions between current phone & next phone
                 let next_phone = word.phones[p+1];
-                for s in 0..phone.states.len() {
-                    for d in 0..next_phone.states.len() {
+                for s in 0..phone.n_states {
+                    for d in 0..next_phone.n_states {
                         let prob = phone.out_prob[s] * next_phone.in_prob[d];
                         if prob > 0f64 {
                             from_state[w][p][s].push(
@@ -103,8 +103,8 @@ pub fn wire(words: &[Word]) -> Transitions {
         let is_phone_sp = phone.name == "sp";
         for (next_w, next_word) in words.iter().enumerate() {
             let next_phone = next_word.phones[0];
-            for d in 0..next_phone.states.len() {
-                for s in 0..phone.states.len() {
+            for d in 0..next_phone.n_states {
+                for s in 0..phone.n_states {
                     let prob = phone.out_prob[s] * word.next_word_prob[next_w] * next_phone.in_prob[d];
                     if prob > 0f64 {
                         from_state[w][p][s].push(
@@ -124,7 +124,7 @@ pub fn wire(words: &[Word]) -> Transitions {
                 if is_phone_sp && p > 0 {
                     // if the phone is "sp", then we can skip it
                     let prev_phone = word.phones[p - 1];
-                    for s in 0..prev_phone.states.len() {
+                    for s in 0..prev_phone.n_states {
                         let prob = prev_phone.out_prob[s] * phone.skip_prob * word.next_word_prob[next_w] * next_phone.in_prob[d];
                         if prob > 0f64 {
                             from_state[w][p - 1][s].push(
