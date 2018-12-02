@@ -69,11 +69,6 @@ pub fn load(dir: &str, phones: &[Phone]) -> tf::Result<Dnn> {
     let range_path = format!("{}/spectrum_window_range.txt", dir);
     let spectrum_window_range = load_spectrum_window_range(&range_path).unwrap();
 
-    println!("graph operations");
-    for op in graph.operation_iter() {
-        println!("{:?}", op.name()?);
-    }
-
     Ok(Dnn { graph, session, label_info, spectrum_window_range })
 }
 
