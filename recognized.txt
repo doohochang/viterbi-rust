@@ -1824,6 +1824,7 @@ four
 zero
 .
 "tst/f/ej/7687569.rec"
+oh
 seven
 six
 eight
@@ -1987,7 +1988,6 @@ seven
 two
 .
 "tst/f/lp/5o8o22o.rec"
-oh
 five
 oh
 eight
@@ -2277,7 +2277,6 @@ oh
 one
 .
 "tst/f/em/3296o68.rec"
-oh
 three
 two
 oh
@@ -5148,7 +5147,6 @@ three
 three
 .
 "tst/f/cj/65977o7.rec"
-oh
 six
 five
 nine
@@ -10323,7 +10321,6 @@ six
 eight
 .
 "tst/m/fa/7z84276.rec"
-oh
 seven
 zero
 eight

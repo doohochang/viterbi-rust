@@ -42,10 +42,15 @@ pub fn run<'w>(
 ) -> Vec<&'w Word<'w>> {
     let mut table = init_table(spectrogram.len(), words);
 
+    let spectrum_window = make_spectrum_window(spectrogram, 0, dnn.spectrum_window_range);
+    let observation_prob = dnn.compute_observation_prob(&spectrum_window, phones);
+
     for t in transitions.from_start.iter() {
         let dest_value = &mut table[0][t.dest.word][t.dest.phone][t.dest.state];
+        let p_index = words[t.dest.word].phones[t.dest.phone].index;
+        let log_prob = t.log_prob + (observation_prob[p_index][t.dest.state] as f64).ln();
         consider_and_apply(
-            Value { log_prob: t.log_prob, prev: None, word_changed: false },
+            Value { log_prob, prev: None, word_changed: false },
             dest_value
         )
     }
