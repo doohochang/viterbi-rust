@@ -1,0 +1,13 @@
+number of epochs: 1290
+batch size: 1000
+
+hidden layer activation: sigmoid
+number of hidden layers: 3
+number of perceptrons in hidden layer 1: 3000
+number of perceptrons in hidden layer 2: 600
+number of perceptrons in hidden layer 3: 300
+
+optimizer: AdamOptimizer
+learning rate: 0.001000
+
+training accuracy: 0.985661

@@ -1,9 +1,9 @@
-mod observation;
 mod transition;
 
 use constants::*;
 use phone::Phone;
 use word::Word;
+use dnn::Dnn;
 pub use self::transition::{Transitions, wire as wire_transitions};
 
 #[derive(Clone, Copy, Debug)]
@@ -33,28 +33,41 @@ fn consider_and_apply(new_value: Value, old_value: &mut Option<Value>) {
     }
 }
 
-pub fn run<'w>(spectrogram: &[[f64; N_DIMENSION]], phones: &[Phone], words: &'w [Word<'w>], transitions: &Transitions) -> Vec<&'w Word<'w>> {
+pub fn run<'w>(
+    spectrogram: &[[f64; N_DIMENSION]],
+    phones: &[Phone],
+    words: &'w [Word<'w>],
+    transitions: &Transitions,
+    dnn: &mut Dnn,
+) -> Vec<&'w Word<'w>> {
     let mut table = init_table(spectrogram.len(), words);
+
+    let spectrum_window = make_spectrum_window(spectrogram, 0, dnn.spectrum_window_range);
+    let observation_prob = dnn.compute_observation_prob(&spectrum_window, phones);
 
     for t in transitions.from_start.iter() {
         let dest_value = &mut table[0][t.dest.word][t.dest.phone][t.dest.state];
+        let p_index = words[t.dest.word].phones[t.dest.phone].index;
+        let log_prob = t.log_prob + (observation_prob[p_index][t.dest.state] as f64).ln();
         consider_and_apply(
-            Value { log_prob: t.log_prob, prev: None, word_changed: false },
+            Value { log_prob, prev: None, word_changed: false },
             dest_value
         )
     }
 
-    for (t, spectrum) in spectrogram[1..].iter().enumerate() {
-        let observation_prob = compute_observation_prob(spectrum, phones);
+    for t in 0..spectrogram.len()-1 {
+        let spectrum_window = make_spectrum_window(spectrogram, t + 1, dnn.spectrum_window_range);
+        let observation_prob = dnn.compute_observation_prob(&spectrum_window, phones);
+
         for (w, word) in words.iter().enumerate() {
             for (p, phone) in word.phones.iter().enumerate() {
-                for s in 0..phone.states.len() {
+                for s in 0..phone.n_states {
                     let table_value = table[t][w][p][s];
                     match table_value {
                         Some(prev_value) => {
                             for tr in transitions.from_state[w][p][s].iter() {
                                 let next_p_index = words[tr.dest.word].phones[tr.dest.phone].index;
-                                let log_prob = prev_value.log_prob + tr.log_prob + observation_prob[next_p_index][tr.dest.state];
+                                let log_prob = prev_value.log_prob + tr.log_prob + (observation_prob[next_p_index][tr.dest.state] as f64).ln();
                                 consider_and_apply(
                                     Value { 
                                         log_prob,
@@ -120,15 +133,27 @@ fn get_max(last_values: &Vec<Vec<Vec<Option<Value>>>>) -> StateRef {
     max.expect("Max Value").prev.expect("Max StateRef")
 }
 
-// pre-compute observation probabilities
-fn compute_observation_prob(spectrum: &[f64; N_DIMENSION], phones: &[Phone]) -> Vec<Vec<f64>> {
-    let mut prob = vec![Vec::new(); phones.len()];
-    for (p, phone) in phones.iter().enumerate() {
-        for state in phone.states.iter() {
-            prob[p].push(observation::prob(spectrum, state));
+fn make_spectrum_window(spectrogram: &[[f64; N_DIMENSION]], index: usize, range: (i32, i32)) -> Vec<f32> {
+    let (start, end) = range;
+    let mut spectrum_window = Vec::new();
+    for delta in start..end {
+        let t = index as i32 + delta;
+        let spectrum =
+            if t < 0 {
+                &spectrogram[0]
+            }
+            else if t >= spectrogram.len() as i32 {
+                &spectrogram[spectrogram.len() - 1]
+            } else {
+                &spectrogram[t as usize]
+            };
+
+        for value in spectrum.iter() {
+            spectrum_window.push(*value as f32);
         }
     }
-    prob
+
+    spectrum_window
 }
 
 // reset and resize multi-demensional vec values
@@ -139,8 +164,8 @@ fn init_table(time_length: usize, words: &[Word]) -> Vec<Vec<Vec<Vec<Option<Valu
         for (w, word) in words.iter().enumerate() {
             table[t].push(Vec::with_capacity(word.phones.len()));
             for (p, phone) in word.phones.iter().enumerate() {
-                table[t][w].push(Vec::with_capacity(phone.states.len()));
-                for _ in 0..phone.states.len() {
+                table[t][w].push(Vec::with_capacity(phone.n_states));
+                for _ in 0..phone.n_states {
                     table[t][w][p].push(None);
                 }
             }
